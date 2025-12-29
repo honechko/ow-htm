@@ -1,0 +1,916 @@
+<html><head>
+<script language=javascript>
+var srv, dir, dev, tm;
+function rl(once) {
+ if (!once) {
+  if (tm) clearTimeout(tm);
+  tm = undefined;
+ } else if (document.getElementById("rl").disabled) return;
+ document.getElementById("rl").disabled = true;
+ if (dev) {
+  if (typeof window["f"+dev.substr(0,2)+"_rl"] === "function")
+   window["f"+dev.substr(0,2)+"_rl"](once);
+  else if (!tm)
+   document.getElementById("rl").disabled = false;
+ } else {
+  xr((dir ? dir : ""), function(once) {
+   var i,h = "";
+   if (this.status == 200 && typeof this.response === "object")
+    for (i in this.response)
+     h += ((i == "alarm" || (i.substr(2,1) == "." && document.getElementById("f"+i.substr(0,2)))) ?
+      "<a href=\"#"+srv+"/"+i+"\">"+i+"</a>" : i) + "<br>";
+   else
+    h = "<font color=red>" + (this.status ? "Error "+this.status+" "+this.statusText : "Server i/o error, check owhttpd") + "</font>";
+   document.getElementById("raw").innerHTML = h;
+   re(once ? 0 : 1000);
+  }, once);
+ }
+}
+function re(d) {
+  if (d && document.getElementById("co").checked && !tm)
+   tm = setTimeout(rl, d);
+  if (!tm)
+   document.getElementById("rl").disabled = false;
+}
+function co() {
+ if (!document.getElementById("co").checked && tm) {
+  clearTimeout(tm);
+  document.getElementById("rl").disabled = false;
+ }
+}
+function ii() {
+ var o,a = location.hash.replace(/^#/,"").split("/");
+ srv = a[0]; dir = a[1]; dev = undefined;
+ if (dir && dir.match(/^[\da-f]{2}\./i)) { dev = dir; dir = undefined; }
+ document.getElementById("cf").hidden = !!srv;
+ document.getElementById("wr").hidden = !srv;
+ document.getElementById("hd").innerHTML = "<a href=\"#\">/</a> " +
+  ((dev||dir) ? "<a href=\"#"+srv+"\">"+srv+"</a> / " + (dev?dev:dir) : srv);
+ document.getElementById("raw").innerHTML = "&nbsp;";
+ document.getElementById("ad").innerHTML = "";
+ document.getElementById("dv").hidden = !dev;
+ for (o of document.getElementById("dv").children)
+  if (o.nodeType == 1 && !(o.hidden = !dev || "f"+dev.substr(0,2) != o.id) && o.onreset)
+   o.onreset.call(o);
+ if (srv) rl();
+}
+function ok() {
+ location.hash = document.getElementById("srv").value;
+}
+function ss(n, i) {
+ var k,o = document.getElementById(n);
+ for (k = 0; o.length > k; k++) o[k].selected = (k == i);
+}
+function sg(n) {
+ var k,o = document.getElementById(n);
+ for (k = 0; o.length > k && !o[k].selected; k++);
+ return k >= o.length ? 0 : k;
+}
+function xr(p, f) {
+ var a = [].slice.call(arguments, 2);
+ var r = new XMLHttpRequest();
+ r.onreadystatechange = function() { if (this.readyState == 4) f.apply(this, a); };
+ r.responseType = "json";
+ r.open("GET", "http://"+srv+"/json/uncached/"+p, true);
+ r.send();
+}
+function xc(t, i) {
+  return t.status == 200 && typeof t.response === "object" && typeof t.response[i] === "string";
+}
+function xe(t, e) {
+ return "<font color=red>"+(e === undefined ? "Following data is not valid" : e)+", "+
+  (t.status ? t.status != 404 ? "error "+t.status+" "+t.statusText :
+   "device is offline" : "server i/o error, check owhttpd")+"</font>";
+}
+function me(n, s) {
+ var i,v,m = [];
+ if (typeof s !== "string") s = "";
+ for (i = 0; n > i; i++)
+  m.push(isNaN(v = parseInt(s.substr(i*2, 2), 16)) ? 0 : v);
+ return m;
+}
+function ro(i) { return Math.round(i*1000000)/1000000; }
+function su(i,s) { i=Math.round(i); return (i&(1<<s))?i-(1<<(s+1)):i; }
+function sp(i,s) { i=Math.round(i); return 0>i?i+(1<<(s+1)):i; }
+function hx(i) { i=Math.round(i); return i>0?256>i?(16>i?"0":"")+i.toString(16):"ff":"00"; }
+function hs(a,o,n) { var s=""; for (n+=o;n>o;o++) s+=hx(a[o]); return s; }
+</script>
+</head><body onload="ii()" onhashchange="ii()">
+<div id="cf">
+Input owhttpd_address:port <input id="srv" type=text value="127.0.0.1:2121" onkeydown="if(event.keyCode==13)ok()">
+<input type=button value="Ok" onclick="ok()"><br><br>
+If you have already configured and running <a href="https://owfs.org/">owserver</a>, run owhttpd in this way:
+<pre>$ owhttpd -p owhttpd_address:port -s owserver_address:port</pre>
+Or run owhttpd as standalone 1-wire bus master in this way:
+<pre>$ owhttpd -p owhttpd_address:port --passive /dev/ttyUSB0</pre>
+Read <a href="https://owfs.org/uploads/owhttpd.html">owhttpd</a> man page.<br>
+</div>
+<div id="wr" hidden><b id="hd"></b><br>
+<input id="rl" type=button value="Reload" onclick="rl()">
+<input id="co" type=checkbox onchange="co()"> continuous <span id="ad"></span><br>
+<div id="raw"></div><div id="dv" hidden>
+
+<!-- ######## f1D begin ######## -->
+<div id="f1D" hidden>
+<script language=javascript>
+function f1D_rl(once) {
+ xr(dev+"/pages/page.8", function(once) {
+  if (xc(this, 0))
+   f1D_fl(this.response[0]);
+  else
+   document.getElementById("raw").innerHTML = xe(this);
+  re(once ? 0 : 250);
+ }, once);
+}
+function f1D_fl(s) {
+ var i,m = me(32, s);
+ document.getElementById("raw").innerHTML = "Page0: " + s;
+ i = [0,6,2,0,0,8,4,0,0,5,1,0,0,7,3,0];
+ i = i[(m[13] >> 2) & 15];
+ document.getElementById("f1D_a").value = m[0] + m[1] * 256 + (i ? 0 : (m[2] + m[3] * 256)) * 65536;
+ document.getElementById("f1D_b").value = m[4] + m[5] * 256 + (i ? 0 : (m[6] + m[7] * 256)) * 65536;
+ document.getElementById("f1D_sa").innerHTML =
+  //(!i ?  m[8]>=m[9]  ? (m[12] & 32) ? "digital pinchange, " : "digital samples, " : "analog samples, " : "") +
+  ((m[17] & 128) ? "high" : "low");
+ document.getElementById("f1D_sb").innerHTML =
+  //(!i ? m[10]>=m[11] ? (m[12] & 16) ? ((m[12] >> 2) & 3) == 2 ? "disabled, " : "digital pinchange, " : "digital samples, " : "analog samples, " : "") +
+  ((m[17] &  64) ? "high" : "low");
+ document.getElementById("f1D_ds").hidden = !i;
+ document.getElementById("f1D_mn").innerHTML = document.getElementById("f1D_ms")[i].innerText;
+ document.getElementById("f1D_min").innerHTML = m[2];
+ document.getElementById("f1D_max").innerHTML = m[3];
+ document.getElementById("f1D_sc").innerHTML = m[6] + m[7] * 256;
+ document.getElementById("f1D_ur").value = i ? "Reset" : "Update";
+ ss("f1D_ms", i);
+ i = ((m[12] >> 6) & 2) | ((m[13] >> 7) & 1); ss("f1D_ea", i);
+ i = ((m[12] >> 5) & 2) | ((m[13] >> 6) & 1); ss("f1D_eb", i);
+ document.getElementById("f1D_taf").value = m[8];
+ document.getElementById("f1D_tar").value = m[9];
+ document.getElementById("f1D_tbf").value = m[10];
+ document.getElementById("f1D_tbr").value = m[11];
+ document.getElementById("f1D_pua").checked = !(m[12] & 32);
+ document.getElementById("f1D_pub").checked = !(m[12] & 16);
+ ss("f1D_pw", (m[12] >> 2) & 3);
+ ss("f1D_pu", (m[12] & 3));
+ ss("f1D_wu", (m[13] & 3) ^ 3);
+}
+function f1D_sv() {
+ var i,m = me(32);
+ i = [0,10,2,14,6,9,1,13,5];
+ m[13] |= (i[sg("f1D_ms")] & 15) << 2;
+ i = sg("f1D_ea"); m[12] |= (i & 2) << 6; m[13] |= (i & 1) << 7;
+ i = sg("f1D_eb"); m[12] |= (i & 2) << 5; m[13] |= (i & 1) << 6;
+ m[8]  = +document.getElementById("f1D_taf").value;
+ m[9]  = +document.getElementById("f1D_tar").value;
+ m[10] = +document.getElementById("f1D_tbf").value;
+ m[11] = +document.getElementById("f1D_tbr").value;
+ if (!document.getElementById("f1D_pua").checked) m[12] |= 32;
+ if (!document.getElementById("f1D_pub").checked) m[12] |= 16;
+ m[12] |= (sg("f1D_pw") & 3) << 2;
+ m[12] |= (sg("f1D_pu") & 3);
+ m[13] |= (sg("f1D_wu") & 3) ^ 3;
+ document.getElementById("f1D_sv").disabled = true;
+ xr(dev+"/pages/page.8?page.8="+hs(m,0,32), f1D_wr, "f1D_sv");
+}
+function f1D_ur() {
+ var i,m = me(32);
+ i = +document.getElementById("f1D_a").value;
+ m[0] = i & 0xff;
+ m[1] = (i >> 8) & 0xff;
+ m[2] = (i >> 16) & 0xff;
+ m[3] = (i >> 24) & 0xff;
+ i = +document.getElementById("f1D_b").value;
+ m[4] = i & 0xff;
+ m[5] = (i >> 8) & 0xff;
+ m[6] = (i >> 16) & 0xff;
+ m[7] = (i >> 24) & 0xff;
+ if (document.getElementById("f1D_ur").value == "Reset") {
+  m[2] = 0xff;
+  m[3] = m[6] = m[7] = 0;
+ }
+ document.getElementById("f1D_ur").disabled = true;
+ xr(dev+"/pages/page.0?page.0="+hs(m,0,32), f1D_wr, "f1D_ur");
+}
+function f1D_wr(n) {
+ if (xc(this, 0))
+  f1D_fl(this.response[0]);
+ else
+  document.getElementById("raw").innerHTML = xe(this, "Write failed");
+ document.getElementById(n).disabled = false;
+}
+</script>
+Counter A: <input id="f1D_a" type=number size=10 min=0 max=4294967295 step=1><br>
+Counter B: <input id="f1D_b" type=number size=10 min=0 max=4294967295 step=1><br>
+Input A: <span id="f1D_sa"></span>, Input B: <span id="f1D_sb"></span><span id="f1D_ds" hidden>, Measures for <span id="f1D_mn"></span>: Min: <span id="f1D_min"></span>, Max: <span id="f1D_max"></span>, Samples: <span id="f1D_sc"></span></span><br>
+<input id="f1D_ur" type=button value="Update" onclick="f1D_ur()"><br>
+Measure: <select id="f1D_ms"><option selected>none
+<option>A low @ Ext pwr<option>A low @ Bat pwr<option>A high @ Ext pwr<option>A high @ Bat pwr
+<option>B low @ Ext pwr<option>B low @ Bat pwr<option>B high @ Ext pwr<option>B high @ Bat pwr
+</select><br>
+Increment A on <select id="f1D_ea"><option selected>falling edges<option>rising edges<option>both edges<option>edge A leads B (quadrature decoder)</select><br>
+Increment B on <select id="f1D_eb"><option selected>falling edges<option>rising edges<option>both edges<option>edge B leads A (quadrature decoder)</select><br>
+Threshold A falling: <input id="f1D_taf" type=number size=3 min=0 max=255 step=1> rising: <input id="f1D_tar" type=number size=3 min=0 max=255 step=1><br>
+Threshold B falling: <input id="f1D_tbf" type=number size=3 min=0 max=255 step=1> rising: <input id="f1D_tbr" type=number size=3 min=0 max=255 step=1><br>
+<input id="f1D_pua" type=checkbox> pullup A<br>
+<input id="f1D_pub" type=checkbox> pullup B<br>
+Sensors power: <select id="f1D_pw"><option selected>off<option>pulse on<option>pulse on, swap B &amp; PWR<option>always on</select><br>
+Pullup/power pulse duration: <select id="f1D_pu"><option selected>25us<option>50us<option>150us<option>500us</select> (guaranteed minimum)<br>
+Sampling period: <select id="f1D_wu"><option selected>150ms<option>75ms<option>38ms<option>19ms</select> <br>
+<input id="f1D_sv" type=button value="Save" onclick="f1D_sv()">
+</div>
+<!-- ######## f1D end ######## -->
+
+<!-- ######## f1E begin ######## -->
+<div id="f1E" hidden onreset="f1E_ii()">
+<script language=javascript>
+function f1E_ii() {
+ f1E_uc("f1E_cet"); f1E_zt();
+}
+function f1E_rl(once) {
+ xr(dev+"/temperature", function(e, once) {
+  if (xc(this, 0)) {
+   document.getElementById("f1E_t").innerHTML = +this.response[0];
+   xr(dev+"/VDD", function(e, once) {
+    if (xc(this, 0)) {
+     document.getElementById("f1E_h").innerHTML = ro(Math.round(this.response[0]*100)/10);
+     xr(dev+"/VAD", function(e, once) {
+      if (xc(this, 0)) {
+       document.getElementById("f1E_v").innerHTML = Math.round(this.response[0]*100);
+       xr(dev+"/pages/page.0", function(e, once) {
+        if (xc(this, 0)) {
+         ss("f1E_rf", me(1,this.response[0])[0] & 1);
+         document.getElementById("raw").innerHTML = "Page0: "+this.response[0];
+         re(once ? 0 : 250);
+        } else e.call(this, once);
+       }, e, once);
+      } else e.call(this, once);
+     }, e, once);
+    } else e.call(this, once);
+   }, e, once);
+  } else e.call(this, once);
+ }, function(once) {
+  document.getElementById("raw").innerHTML = xe(this);
+  re(once ? 0 : 250);
+ }, once);
+}
+function f1E_p0() { return hx(0x0e|(sg("f1E_rf")&0x01))+"00000000000000"; }
+function f1E_rf() {
+ xr(dev+"/pages/page.0?page.0="+f1E_p0(), function() { rl(1); });
+}
+function f1E_ga(b,n,p,s) {
+ b.disabled = true;
+ xr(dev+p, function(e,b,n,s) {
+  if (xc(this, 0)) {
+   xr(dev+"/pages/page.0", function(e,b,n,s) {
+    if (xc(this, 0)) {
+     var m = me(8, this.response[0]);
+     document.getElementById(n).value = ro((m[5] + m[6] * 256) / s);
+     b.disabled = false;
+    } else e.call(this,b,n,s);
+   }, e,b,n,s);
+  } else e.call(this,b,n,s);
+ }, function(b,n,s) {
+  document.getElementById(n).value = "";
+  b.disabled = false;
+ }, b,n,s);
+}
+function f1E_ex(c,n) {
+ var o = document.getElementById(n);
+ if (!(o.hidden = !c.checked) && o.onreset)
+  o.onreset.call(o);
+}
+function f1E_uc(n) {
+ var o = document.getElementById(n);
+ o.checked = false;
+ if (o.onchange)
+  o.onchange.call(o);
+}
+function f1E_ac(i) {
+ var o,s;
+ if (i) {
+  i.value = i.parentNode.cellIndex ? Math.round(+i.value) : ro(+i.value);
+  if ((o = i.parentNode.parentNode.nextElementSibling) && (o = o.cells[i.parentNode.cellIndex].firstElementChild)) {
+   o.min = ro(+i.value+o.step*1);
+   o.max = ro(+i.value+o.step*256);
+  }
+  if (!i.parentNode.cellIndex) {
+   o = i.parentNode.parentNode.parentNode;
+   s = +o.rows[2].cells[0].firstElementChild.value-(o.rows[1].cells[0].firstElementChild ? o.rows[1].cells[0].firstElementChild.value : 0);
+   for (i = 3; o.rows.length > i; i++)
+    o.rows[i].cells[0].innerHTML = ro(+o.rows[2].cells[0].firstElementChild.value+(i-2)*s);
+  }
+ }
+}
+function f1E_tr(o) {
+ f1E_ac(o.rows[1].cells[0].firstElementChild);
+ f1E_ac(o.rows[2].cells[0].firstElementChild);
+ for (var i = 1; o.rows.length > i; i++)
+  f1E_ac(o.rows[i].cells[1].firstElementChild);
+}
+function f1E_tf(t,n) {
+ var i,r,o = document.getElementById(t);
+ while (n+2 > o.rows.length) {
+  r = o.insertRow(o.rows.length);
+  i = r.insertCell(0);
+  i = r.insertCell(1);
+  i.innerHTML = o.rows[2].cells[1].innerHTML;
+  i.firstElementChild.value = 0;
+ }
+ for (i = 1; o.rows.length > i; i++)
+  o.rows[i].hidden = i >= n+2;
+ o.parentElement.hidden = 0 >= n;
+ f1E_tr(o);
+}
+function f1E_tc(t,n) {
+ var i,r,c,o;
+ if (isNaN(n)) n = sg(t?"f1E_vc":"f1E_hc");
+ f1E_tf(t?"f1E_tv":"f1E_th",n);
+ for (i = n, c = 0; 2 > c; c++, t = !t, i = sg(t?"f1E_vc":"f1E_hc")) {
+  i = i?50>i?50-i:1:(t?54:51);
+  o = document.getElementById(!t?"f1E_vc":"f1E_hc");
+  while (o.length > i)
+   o.removeChild(o.lastChild);
+  while (i > o.length) {
+   r = document.createElement("option");
+   r.text = o.length+1;
+   o.appendChild(r);
+  }
+ }
+ ss(t?"f1E_vc":"f1E_hc",n);
+ n = 52;
+ if (i = sg("f1E_hc")) n -= i+2;
+ if (i = sg("f1E_vc")) n -= i+5;
+ document.getElementById("f1E_tc").innerHTML = n>0?n+1:"no";
+ f1E_tf("f1E_tt",n);
+ f1E_uc("f1E_cct");
+ f1E_uc("f1E_cch");
+}
+function f1E_zt() {
+ var n,o;
+ for (n of ["f1E_tt","f1E_tv","f1E_th"]) {
+  o = document.getElementById(n);
+  while (o.rows.length > 3) o.deleteRow(-1);
+ }
+ for (n of ["f1E_tk","f1E_t1","f1E_ta1","f1E_t10","f1E_t11","f1E_t20","f1E_t21",
+   "f1E_hm","f1E_hk","f1E_h1","f1E_ha1","f1E_h20","f1E_h21","f1E_v10","f1E_v11","f1E_v20","f1E_v21"])
+  document.getElementById(n).value = document.getElementById(n).placeholder ?
+   document.getElementById(n).placeholder : document.getElementById(n).defaultValue;
+}
+function f1E_lt() {
+ document.getElementById("f1E_lt").disabled = true;
+ document.getElementById("f1E_tab").innerHTML = "&nbsp;";
+ xr(dev+"/pages/page.ALL", function() {
+  f1E_zt();
+  f1E_tc(0,0);
+  f1E_tc(1,0);
+  if (xc(this, 0)) {
+   var i,n,a,h,t,o,m = me(64, this.response[0]);
+   document.getElementById("f1E_tab").innerHTML = "Pages read successfully";
+   for (a = 8; 64 > a; a += n+1) {
+    n = m[a];
+    if (n & 0x80) {
+     i = n;
+     n = 63-a;
+     h = 3;
+     if (n > h) {
+      o = document.getElementById("f1E_tt");
+      o.rows[1].cells[0].firstElementChild.value = ro(su((i&0x0f) * 256 + m[a+1], 11) / 16);
+      o.rows[1].cells[1].firstElementChild.value = (i&0x70) * 16 + m[a+2];
+      o.rows[2].cells[0].firstElementChild.value = ro(+o.rows[1].cells[0].firstElementChild.value + (m[a+3] + 1) / 32);
+     }
+     t = 1;
+    } else {
+     t = (n >> 6) & 1;
+     if ((n &= 0x3f) > 63-a) n = 63-a;
+     h = t ? 4 : 1;
+     if (n > h) {
+      f1E_tc(t, n-h);
+      o = document.getElementById(t?"f1E_tv":"f1E_th");
+      i = m[a+1];
+      if (t) {
+       o.rows[1].cells[0].firstElementChild.value = su((i&0x0f) * 256 + m[a+2], 11);
+       o.rows[1].cells[1].firstElementChild.value = (i&0xf0) * 16 + m[a+3];
+       o.rows[2].cells[0].firstElementChild.value = ro(+o.rows[1].cells[0].firstElementChild.value + m[a+4] + 1);
+      } else {
+       o.rows[2].cells[0].firstElementChild.value = ro((i + 1) / 10);
+       o.rows[2].cells[1].firstElementChild.value = m[a+2] + 1;
+      }
+     }
+    }
+    for (i = t?0:1; n-h > i; i++)
+     o.rows[i+2].cells[1].firstElementChild.value = ro(+o.rows[i+1].cells[1].firstElementChild.value + m[a+h+i+1] + 1);
+    if (n > h) f1E_tr(o);
+   }
+  } else document.getElementById("f1E_tab").innerHTML = xe(this);
+  document.getElementById("f1E_lt").disabled = false;
+ });
+}
+function f1E_st() {
+ var i,n,o,a,e="",s = f1E_p0();
+ if (n = sg("f1E_hc")) {
+  o = document.getElementById("f1E_th");
+  s += hx(++n) + hx(+o.rows[2].cells[0].firstElementChild.value*10-1)
+   + hx(+o.rows[2].cells[1].firstElementChild.value-1);
+  for (i = 3; n >= i; i++)
+   s += hx(+o.rows[i].cells[1].firstElementChild.value-o.rows[i-1].cells[1].firstElementChild.value-1);
+  for (i=n; i>=2; i--) if (!o.rows[i].cells[1].firstElementChild.validity.valid) e = "row "+i+", col 2";
+  if (!o.rows[2].cells[0].firstElementChild.validity.valid) e = "row 2, col 1";
+  if (e!="" && !e.match(/table/)) e = "humidity table "+e;
+ }
+ if (n = sg("f1E_vc")) {
+  o = document.getElementById("f1E_tv");
+  i = sp(+o.rows[1].cells[0].firstElementChild.value, 11);
+  a = Math.round(+o.rows[1].cells[1].firstElementChild.value);
+  s += hx((++n+3)|64) + hx(((i>>8)&0x0f)|((a>>4)&0xf0)) + hx(i&0xff) + hx(a&0xff)
+   + hx(+o.rows[2].cells[0].firstElementChild.value-o.rows[1].cells[0].firstElementChild.value-1);
+  for (i = 2; n >= i; i++)
+   s += hx(+o.rows[i].cells[1].firstElementChild.value-o.rows[i-1].cells[1].firstElementChild.value-1);
+  for (i=n; i>=1; i--) if (!o.rows[i].cells[1].firstElementChild.validity.valid) e = "row "+i+", col 2";
+  for (i=2; i>=1; i--) if (!o.rows[i].cells[0].firstElementChild.validity.valid) e = "row "+i+", col 1";
+  if (e!="" && !e.match(/table/)) e = "user sensor table "+e;
+ }
+ if ((n = 61-s.length/2) > 1) {
+  o = document.getElementById("f1E_tt");
+  i = sp(+o.rows[1].cells[0].firstElementChild.value*16, 11);
+  a = Math.round(+o.rows[1].cells[1].firstElementChild.value);
+  s += hx(0x80|((i>>8)&0x0f)|((a>>4)&0x70)) + hx(i&0xff) + hx(a&0xff)
+   + hx((+o.rows[2].cells[0].firstElementChild.value-o.rows[1].cells[0].firstElementChild.value)*32-1);
+  for (i = 2; n >= i; i++)
+   s += hx(+o.rows[i].cells[1].firstElementChild.value-o.rows[i-1].cells[1].firstElementChild.value-1);
+  for (i=n; i>=1; i--) if (!o.rows[i].cells[1].firstElementChild.validity.valid) e = "row "+i+", col 2";
+  for (i=2; i>=1; i--) if (!o.rows[i].cells[0].firstElementChild.validity.valid) e = "row "+i+", col 1";
+  if (e!="" && !e.match(/table/)) e = "temperature table "+e;
+ } else {
+  s += s.substr(0,128-s.length);
+ }
+ if (e!="") {
+  document.getElementById("f1E_tab").innerHTML = "<font color=red>Error in "+e+"</font>";
+ } else {
+  document.getElementById("f1E_st").disabled = true;
+  document.getElementById("f1E_tab").innerHTML = "&nbsp;";
+  xr(dev+"/pages/page.ALL?page.ALL="+s, function() {
+   if (xc(this, 0))
+    document.getElementById("f1E_tab").innerHTML = "Pages written successfully";
+   else
+    document.getElementById("f1E_tab").innerHTML = xe(this, "Write failed");
+   document.getElementById("f1E_st").disabled = false;
+  });
+ }
+}
+function f1E_fRt(t) {
+ var a,b,c,x,y;
+ switch (sg("f1E_tp")) {
+ default:
+  a = 0.0007837067043;
+  b = 0.0002673054791;
+  c = 0.0000001386573474;
+  break;
+ }
+ x = (a-1/(273.15+t))/(2*c);
+ y = Math.sqrt(Math.pow(b/(3*c),3)+x*x);
+ return Math.exp(Math.pow(y-x,1/3)-Math.pow(y+x,1/3));
+}
+function f1E_ADCt(t,r) {
+ return 4096/((f1E_fRt(t)+(31+0.05*t))/r+1);
+}
+function f1E_ct() {
+ var t,a,r,s,k,k0 = 0;
+ t = +document.getElementById("f1E_t1").value;
+ a = +document.getElementById("f1E_ta1").value;
+ r = f1E_fRt(25);
+ for (s = 10; s >= 0.0000001; s /= 10)
+  for (k = k0; a >= f1E_ADCt(t,k*r); k0 = k, k += s);
+ document.getElementById("f1E_tk").value = ro(k0);
+}
+function f1E_ft() {
+ var r,t,s,i,o = document.getElementById("f1E_tt");
+ r = +document.getElementById("f1E_tk").value * f1E_fRt(25);
+ t = ro(+o.rows[1].cells[0].firstElementChild.value);
+ s = ro(+o.rows[2].cells[0].firstElementChild.value)-t;
+ for (i = 1; o.rows.length > i; i++, t += s) {
+  o.rows[i].cells[1].firstElementChild.value = Math.round(f1E_ADCt(t,r));
+  f1E_ac(o.rows[i].cells[1].firstElementChild);
+ }
+}
+function f1E_fRh(h) {
+ var y,x = 0.6-h/100;
+ y = x*12.3;
+ return Math.exp(y);
+}
+function f1E_ADCh(h,k,m) {
+ return 1024/(f1E_fRh(h)*k+1) + 1024/(f1E_fRh(h)*k/m+1);
+}
+function f1E_ch() {
+ var m,h,a,s,k,k0 = 0;
+ m = +document.getElementById("f1E_hm").value;
+ h = +document.getElementById("f1E_h1").value;
+ a = +document.getElementById("f1E_ha1").value;
+ for (s = 10; s >= 0.0000001; s /= 10)
+  for (k = k0; f1E_ADCh(h,k,m) >= a; k0 = k, k += s);
+ document.getElementById("f1E_hk").value = ro(k0);
+}
+function f1E_fh() {
+ var k,m,h,s,i,o = document.getElementById("f1E_th");
+ k = +document.getElementById("f1E_hk").value;
+ m = +document.getElementById("f1E_hm").value;
+ h = s = ro(+o.rows[2].cells[0].firstElementChild.value);
+ for (i = 2; o.rows.length > i; i++, h += s) {
+  o.rows[i].cells[1].firstElementChild.value = Math.round(f1E_ADCh(h,k,m));
+  f1E_ac(o.rows[i].cells[1].firstElementChild);
+ }
+}
+</script>
+Temperature: <span id="f1E_t"></span>&#8451;<br>
+Relative Humidity: <span id="f1E_h"></span>%<br>
+User Sensor Value: <span id="f1E_v"></span><br>
+User Sensor Reference: <select id="f1E_rf" onchange="f1E_rf()"><option>VCC<option selected>1.1V</select><br>
+<input id="f1E_cet" type=checkbox onchange="f1E_ex(this,'f1E_et')"> edit tables<br>
+<div id="f1E_et" hidden onreset="f1E_lt()">
+<input id="f1E_lt" type=button value="Load tables" onclick="f1E_lt()">
+<input id="f1E_st" type=button value="Save tables" onclick="f1E_st()"><br>
+<span id="f1E_tab"></span><br>
+<b>Temperature table:</b> <span id="f1E_tc"></span> points<br>
+<div hidden>
+<input id="f1E_cct" type=checkbox onchange="f1E_ex(this,'f1E_ct')"> calibrate temperature sensor &amp; fill table<br>
+<div id="f1E_ct" hidden>
+<table border=1><tr><td><input type=button value="Calibrate" onclick="f1E_ct()"></td>
+<td>Temperature, &#8451;</td><td>ADC</td></tr>
+<tr><td>Ref.point</td><td><input id="f1E_t1" type=number step=0.000001 min=-128 max=128 placeholder=25></td>
+<td><input id="f1E_ta1" type=number step=0.001 min=0 max=4096 placeholder=2048>
+<input type=button value="Get" onclick="f1E_ga(this,'f1E_ta1','/temperature',8)"></td></tr>
+</table>
+<table border=0><tr><td><input type=button value="Fill table" onclick="f1E_ft()"></td>
+<td>Rt:<select id="f1E_tp"><option selected>NCP18XH103F03RB</select></td>
+<td>R0/Rt25=<input id="f1E_tk" type=number step=0.000001 min=0.1 max=10 placeholder=1></td></tr>
+</table></div>
+<table id="f1E_tt" border=1>
+<tr><td>Temperature, &#8451;</td><td>ADC (0..4095)</td></tr>
+<tr><td><input id="f1E_t10" type=number value=0 step=0.0625 min=-128 max=127.9375 onchange="f1E_ac(this)"></td>
+<td><input id="f1E_t11" type=number value=0 step=1 min=0 max=2047 onchange="f1E_ac(this)"></td></tr>
+<tr><td><input id="f1E_t20" type=number value=0 step=0.03125 onchange="f1E_ac(this)"></td>
+<td><input id="f1E_t21" type=number value=0 step=1 onchange="f1E_ac(this)"></td></tr>
+</table></div>
+<b>Humidity table:</b> <select id="f1E_hc" onchange="f1E_tc(0)"><option selected>no</select> points<br>
+<div hidden>
+<input id="f1E_cch" type=checkbox onchange="f1E_ex(this,'f1E_ch')"> calibrate humidity sensor &amp; fill table<br>
+<div id="f1E_ch" hidden>
+<table border=1><tr><td><input type=button value="Calibrate" onclick="f1E_ch()"></td>
+<td>Humidity, %</td><td>ADC</td></tr>
+<tr><td>Ref.point</td><td><input id="f1E_h1" type=number step=0.001 min=0.1 max=100 placeholder=75></td>
+<td><input id="f1E_ha1" type=number step=0.001 min=0 max=2048 placeholder=1450>
+<input type=button value="Get" onclick="f1E_ga(this,'f1E_ha1','/VDD',8)"></td></tr></table>
+<table border=0><tr><td><input type=button value="Fill table" onclick="f1E_fh()"></td>
+<td>RT/Rt=<input id="f1E_hm" type=number step=0.000001 min=20 max=250 placeholder=100></td>
+<td>Rh60/Rt=<input id="f1E_hk" type=number step=0.000001 min=0.1 max=20 placeholder="8.5"></td></tr></table>
+</div>
+<table id="f1E_th" border=1>
+<tr><td>Humidity, %</td><td>ADC (0..2047)</td></tr><tr><td>0</td><td>0</td></tr>
+<tr><td><input id="f1E_h20" type=number value=0 step=0.1 min=0.1 max=25.6 onchange="f1E_ac(this)"></td>
+<td><input id="f1E_h21" type=number value=0 step=1 min=1 max=256 onchange="f1E_ac(this)"></td></tr>
+</table></div>
+<b>User Sensor table:</b> <select id="f1E_vc" onchange="f1E_tc(1)"><option selected>no</select> points<br>
+<div hidden><table id="f1E_tv" border=1>
+<tr><td>Value</td><td>ADC (0..4095)</td></tr>
+<tr><td><input id="f1E_v10" type=number value=0 step=1 min=-2048 max=2047 onchange="f1E_ac(this)"></td>
+<td><input id="f1E_v11" type=number value=0 step=1 min=0 max=4095 onchange="f1E_ac(this)"></td></tr>
+<tr><td><input id="f1E_v20" type=number value=0 step=1 onchange="f1E_ac(this)"></td>
+<td><input id="f1E_v21" type=number value=0 step=1 onchange="f1E_ac(this)"></td></tr>
+</table></div>
+</div></div>
+<!-- ######## f1E end ######## -->
+
+<!-- ######## f20 begin ######## -->
+<div id="f20" hidden onreset="f20_ii()">
+<script language=javascript>
+function f20_ii() {
+ document.getElementById("ad").innerHTML = "<input id=\"f20_ac\" type=checkbox> analog convert";
+}
+function f20_rl(once) {
+ if (document.getElementById("f20_ac").checked && !once) {
+  xr(dev+"/volt.ALL", function(p) {
+   if (xc(this, 0)) {
+    xr(dev+"/pages", function(p) {
+     if (xc(this, "page.ALL") && f20_rc(this.response["page.ALL"])) {
+      xr(dev+"/pages/page.1?page.1="+f20_rf(this.response["page.ALL"]), function(p) {
+       if (xc(this, 0)) {
+        xr(dev+"/volt.ALL", function(p) {
+         if (xc(this, 0)) {
+          xr(dev+"/pages", p);
+         } else p.call(this);
+        }, p);
+       } else p.call(this);
+      }, p);
+     } else p.call(this);
+    }, p);
+   } else p.call(this);
+  }, f20_pr);
+ } else xr(dev+"/pages", f20_pr, once);
+}
+function f20_pr(once) {
+ if (xc(this, "page.ALL"))
+  f20_fl(this.response["page.ALL"]);
+ else
+  document.getElementById("raw").innerHTML = xe(this);
+ re(once ? 0 : 250);
+}
+function f20_rc(s) {
+ var i,m = me(32, s);
+ return (
+  sg("f20_ade0") != ((m[9]  & 2) ? (m[9]  & 1) ? 2 : 1 : 0) ||
+  sg("f20_ade2") != ((m[11] & 2) ? (m[11] & 1) ? 2 : 1 : 0) ||
+  sg("f20_ade3") != ((m[13] & 2) ? (m[13] & 1) ? 2 : 1 : 0) ||
+  sg("f20_ade4") != ((m[15] & 2) ? (m[15] & 1) ? 2 : 1 : 0) ||
+  sg("f20_rpa") != ((m[8]  & 16) | ((m[8]  + 15) & 15)) ||
+  sg("f20_rpb") != ((m[10] & 16) | ((m[10] + 15) & 15)) ||
+  sg("f20_rpc") != ((m[12] & 16) | ((m[12] + 15) & 15)) ||
+  sg("f20_rpd") != ((m[14] & 16) | ((m[14] + 15) & 15)));
+}
+function f20_rf(s) {
+ var i,m = me(32, s);
+ for (i = 8; 16 > i; i+=2) m[i] &= 240;
+ for (i = 9; 16 > i; i+=2) m[i] &= 190;
+ if (sg("f20_ade0") > 1) m[9]  |= 1;
+ if (sg("f20_ade2") > 1) m[11] |= 1;
+ if (sg("f20_ade3") > 1) m[13] |= 1;
+ if (sg("f20_ade4") > 1) m[15] |= 1;
+ m[8]  |= (sg("f20_rpa") + 1) & 15;
+ m[10] |= (sg("f20_rpb") + 1) & 15;
+ m[12] |= (sg("f20_rpc") + 1) & 15;
+ m[14] |= (sg("f20_rpd") + 1) & 15;
+ return hs(m,8,8);
+}
+function f20_fl(s) {
+ var i,m = me(32, s);
+ document.getElementById("raw").innerHTML = "Pages: " + s;
+ document.getElementById("f20_por").checked = !!(m[9] & 128);
+ document.getElementById("f20_adf0").checked = !!(m[9]  & 64);
+ document.getElementById("f20_adf1").checked = !!(m[31] & 4);
+ document.getElementById("f20_adf2").checked = !!(m[11] & 64);
+ document.getElementById("f20_adf3").checked = !!(m[13] & 64);
+ document.getElementById("f20_adf4").checked = !!(m[15] & 64);
+ ss("f20_ade0", (m[9]  & 2) ? (m[9]  & 1) ? 2 : 1 : 0);
+ ss("f20_ade1", (m[31] & 2) ? (m[31] & 1) ? 2 : 1 : 0);
+ ss("f20_ade2", (m[11] & 2) ? (m[11] & 1) ? 2 : 1 : 0);
+ ss("f20_ade3", (m[13] & 2) ? (m[13] & 1) ? 2 : 1 : 0);
+ ss("f20_ade4", (m[15] & 2) ? (m[15] & 1) ? 2 : 1 : 0);
+ document.getElementById("f20_di0").innerHTML = (m[8]  & 32) ? "high" : "low";
+ document.getElementById("f20_di1").innerHTML = (m[31] & 32) ? "high" : "low";
+ document.getElementById("f20_di2").innerHTML = (m[10] & 32) ? "high" : "low";
+ document.getElementById("f20_di3").innerHTML = (m[12] & 32) ? "high" : "low";
+ document.getElementById("f20_di4").innerHTML = (m[14] & 32) ? "high" : "low";
+ ss("f20_dm0", (m[8]  >> 6) & 3);
+ ss("f20_dm1", (m[31] >> 6) & 3);
+ ss("f20_dm2", (m[10] >> 6) & 3);
+ ss("f20_dm3", (m[12] >> 6) & 3);
+ ss("f20_dm4", (m[14] >> 6) & 3);
+ document.getElementById("f20_pwm").value = m[30];
+ document.getElementById("f20_afha").checked = !!(m[9]  & 32);
+ document.getElementById("f20_afhb").checked = !!(m[11] & 32);
+ document.getElementById("f20_afhc").checked = !!(m[13] & 32);
+ document.getElementById("f20_afhd").checked = !!(m[15] & 32);
+ document.getElementById("f20_afla").checked = !!(m[9]  & 16);
+ document.getElementById("f20_aflb").checked = !!(m[11] & 16);
+ document.getElementById("f20_aflc").checked = !!(m[13] & 16);
+ document.getElementById("f20_afld").checked = !!(m[15] & 16);
+ ss("f20_aea", (m[9]  >> 2) & 3);
+ ss("f20_aeb", (m[11] >> 2) & 3);
+ ss("f20_aec", (m[13] >> 2) & 3);
+ ss("f20_aed", (m[15] >> 2) & 3);
+ document.getElementById("f20_thla").value = m[16];
+ document.getElementById("f20_thha").value = m[17];
+ document.getElementById("f20_thlb").value = m[18];
+ document.getElementById("f20_thhb").value = m[19];
+ document.getElementById("f20_thlc").value = m[20];
+ document.getElementById("f20_thhc").value = m[21];
+ document.getElementById("f20_thld").value = m[22];
+ document.getElementById("f20_thhd").value = m[23];
+ document.getElementById("f20_va").innerHTML = m[1] + m[0] / 256;
+ document.getElementById("f20_vb").innerHTML = m[3] + m[2] / 256;
+ document.getElementById("f20_vc").innerHTML = m[5] + m[4] / 256;
+ document.getElementById("f20_vd").innerHTML = m[7] + m[6] / 256;
+ ss("f20_rpa", (m[8]  & 16) | ((m[8]  + 15) & 15));
+ ss("f20_rpb", (m[10] & 16) | ((m[10] + 15) & 15));
+ ss("f20_rpc", (m[12] & 16) | ((m[12] + 15) & 15));
+ ss("f20_rpd", (m[14] & 16) | ((m[14] + 15) & 15));
+ f20_ca();
+}
+function f20_ca(s) {
+ document.getElementById("f20_ca").checked = false;
+ for (var o of ["f20_por","f20_adf0","f20_adf1","f20_adf2","f20_adf3","f20_adf4","f20_afha","f20_afhb","f20_afhc","f20_afhd","f20_afla","f20_aflb","f20_aflc","f20_afld"])
+  if (s)
+   document.getElementById(o).checked = false;
+  else
+   document.getElementById("f20_ca").checked |= document.getElementById(o).checked;
+}
+function f20_sv() {
+ var i,m = me(32);
+ if (document.getElementById("f20_por").checked) {
+  m[9] |= 128; m[11] |= 128; m[13] |= 128; m[15] |= 128;
+ }
+ if (!document.getElementById("f20_adf0").checked) m[9]  |= 64;
+ if (!document.getElementById("f20_adf1").checked) m[31] |= 4;
+ if (!document.getElementById("f20_adf2").checked) m[11] |= 64;
+ if (!document.getElementById("f20_adf3").checked) m[13] |= 64;
+ if (!document.getElementById("f20_adf4").checked) m[15] |= 64;
+ i = sg("f20_ade0"); if (i) m[9]  |= 2; if (i > 1) m[9]  |= 1;
+ i = sg("f20_ade1"); if (i) m[31] |= 2; if (i > 1) m[31] |= 1;
+ i = sg("f20_ade2"); if (i) m[11] |= 2; if (i > 1) m[11] |= 1;
+ i = sg("f20_ade3"); if (i) m[13] |= 2; if (i > 1) m[13] |= 1;
+ i = sg("f20_ade4"); if (i) m[15] |= 2; if (i > 1) m[15] |= 1;
+ m[8]  |= (sg("f20_dm0") & 3) << 6;
+ m[31] |= (sg("f20_dm1") & 3) << 6;
+ m[10] |= (sg("f20_dm2") & 3) << 6;
+ m[12] |= (sg("f20_dm3") & 3) << 6;
+ m[14] |= (sg("f20_dm4") & 3) << 6;
+ m[30] = +document.getElementById("f20_pwm").value;
+ if (document.getElementById("f20_afha").checked) m[9]  |= 32;
+ if (document.getElementById("f20_afhb").checked) m[11] |= 32;
+ if (document.getElementById("f20_afhc").checked) m[13] |= 32;
+ if (document.getElementById("f20_afhd").checked) m[15] |= 32;
+ if (document.getElementById("f20_afla").checked) m[9]  |= 16;
+ if (document.getElementById("f20_aflb").checked) m[11] |= 16;
+ if (document.getElementById("f20_aflc").checked) m[13] |= 16;
+ if (document.getElementById("f20_afld").checked) m[15] |= 16;
+ m[9]  |= (sg("f20_aea") & 3) << 2;
+ m[11] |= (sg("f20_aeb") & 3) << 2;
+ m[13] |= (sg("f20_aec") & 3) << 2;
+ m[15] |= (sg("f20_aed") & 3) << 2;
+ m[16] = +document.getElementById("f20_thla").value;
+ m[17] = +document.getElementById("f20_thha").value;
+ m[18] = +document.getElementById("f20_thlb").value;
+ m[19] = +document.getElementById("f20_thhb").value;
+ m[20] = +document.getElementById("f20_thlc").value;
+ m[21] = +document.getElementById("f20_thhc").value;
+ m[22] = +document.getElementById("f20_thld").value;
+ m[23] = +document.getElementById("f20_thhd").value;
+ i = sg("f20_rpa"); m[8]  |= (i & 16) | ((i + 1) & 15);
+ i = sg("f20_rpb"); m[10] |= (i & 16) | ((i + 1) & 15);
+ i = sg("f20_rpc"); m[12] |= (i & 16) | ((i + 1) & 15);
+ i = sg("f20_rpd"); m[14] |= (i & 16) | ((i + 1) & 15);
+ document.getElementById("f20_sv").disabled = true;
+ xr(dev+"/pages/page.2?page.2="+hs(m,16,8), function(e) {
+  if (xc(this, 0)) {
+   xr(dev+"/pages/page.3?page.3="+hs(m,24,8), function(e) {
+    if (xc(this, 0)) {
+     xr(dev+"/pages?page.1="+hs(m,8,8), function(e) {
+      if (xc(this, "page.ALL")) {
+       f20_fl(this.response["page.ALL"]);
+       document.getElementById("f20_sv").disabled = false;
+      } else e.call(this);
+     }, e);
+    } else e.call(this);
+   }, e);
+  } else e.call(this);
+ }, function() {
+  document.getElementById("raw").innerHTML = xe(this, "Write failed");
+  document.getElementById("f20_sv").disabled = false;
+ });
+}
+</script>
+<input id="f20_por" type=checkbox onchange="f20_ca()"> power on reset (POR) alarm flag<br>
+<table border=1><tr><td>&nbsp;</td><td>P0 (A)</td><td>P1</td><td>P2 (B)</td><td>P3 (C)</td><td>P4 (D)</td></tr></tr>
+<tr><td>Alarm flag</td>
+<td><input id="f20_adf0" type=checkbox onchange="f20_ca()"></td>
+<td><input id="f20_adf1" type=checkbox onchange="f20_ca()"></td>
+<td><input id="f20_adf2" type=checkbox onchange="f20_ca()"></td>
+<td><input id="f20_adf3" type=checkbox onchange="f20_ca()"></td>
+<td><input id="f20_adf4" type=checkbox onchange="f20_ca()"></td>
+</tr>
+<tr><td>Watch for</td>
+<td><select id="f20_ade0"><option selected>none<option>low<option>high</select></td>
+<td><select id="f20_ade1"><option selected>none<option>low<option>high</select></td>
+<td><select id="f20_ade2"><option selected>none<option>low<option>high</select></td>
+<td><select id="f20_ade3"><option selected>none<option>low<option>high</select></td>
+<td><select id="f20_ade4"><option selected>none<option>low<option>high</select></td>
+</tr>
+<tr><td>Input read</td>
+<td><span id="f20_di0"></span></td>
+<td><span id="f20_di1"></span></td>
+<td><span id="f20_di2"></span></td>
+<td><span id="f20_di3"></span></td>
+<td><span id="f20_di4"></span></td>
+</tr>
+<tr><td>Pin mode</td>
+<td><select id="f20_dm0"><option selected>in<option>in pullup<option>out low<option>out high</select></td>
+<td><select id="f20_dm1"><option selected>in<option>in pullup<option>out low<option>out PWM</select></td>
+<td><select id="f20_dm2"><option selected>in<option>in pullup<option>out low<option>out high</select></td>
+<td><select id="f20_dm3"><option selected>in<option>in pullup<option>out low<option>out high</select></td>
+<td><select id="f20_dm4"><option selected>in<option>in pullup<option>out low<option>out high</select></td>
+</tr>
+<tr><td>PWM</td><td>&nbsp;</td>
+<td><input id="f20_pwm" type=number size=3 min=0 max=255 step=1></td>
+<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+</tr>
+<tr><td>Alarm flag</td>
+<td><input id="f20_afha" type=checkbox onchange="f20_ca()"> high, <input id="f20_afla" type=checkbox onchange="f20_ca()"> low</td>
+<td>&nbsp;</td>
+<td><input id="f20_afhb" type=checkbox onchange="f20_ca()"> high, <input id="f20_aflb" type=checkbox onchange="f20_ca()"> low</td>
+<td><input id="f20_afhc" type=checkbox onchange="f20_ca()"> high, <input id="f20_aflc" type=checkbox onchange="f20_ca()"> low</td>
+<td><input id="f20_afhd" type=checkbox onchange="f20_ca()"> high, <input id="f20_afld" type=checkbox onchange="f20_ca()"> low</td>
+</tr>
+<tr><td>Check for</td>
+<td><select id="f20_aea"><option selected>none<option>V&lt;thL<option>V&gt;thH<option>V&lt;thL or V&gt;thH</select></td>
+<td>&nbsp;</td>
+<td><select id="f20_aeb"><option selected>none<option>V&lt;thL<option>V&gt;thH<option>V&lt;thL or V&gt;thH</select></td>
+<td><select id="f20_aec"><option selected>none<option>V&lt;thL<option>V&gt;thH<option>V&lt;thL or V&gt;thH</select></td>
+<td><select id="f20_aed"><option selected>none<option>V&lt;thL<option>V&gt;thH<option>V&lt;thL or V&gt;thH</select></td>
+</tr>
+<tr><td>Threshold H</td>
+<td><input id="f20_thha" type=number size=3 min=0 max=255 step=1></td>
+<td>&nbsp;</td>
+<td><input id="f20_thhb" type=number size=3 min=0 max=255 step=1></td>
+<td><input id="f20_thhc" type=number size=3 min=0 max=255 step=1></td>
+<td><input id="f20_thhd" type=number size=3 min=0 max=255 step=1></td>
+</tr>
+<tr><td>Threshold L</td>
+<td><input id="f20_thla" type=number size=3 min=0 max=255 step=1></td>
+<td>&nbsp;</td>
+<td><input id="f20_thlb" type=number size=3 min=0 max=255 step=1></td>
+<td><input id="f20_thlc" type=number size=3 min=0 max=255 step=1></td>
+<td><input id="f20_thld" type=number size=3 min=0 max=255 step=1></td>
+</tr>
+<tr><td>Last Value</td>
+<td><span id="f20_va"></span></td>
+<td>&nbsp;</td>
+<td><span id="f20_vb"></span></td>
+<td><span id="f20_vc"></span></td>
+<td><span id="f20_vd"></span></td>
+</tr>
+<tr><td>Ref &amp; Precis</td>
+<td><select id="f20_rpa">
+<option>VCC, 1bit<option>VCC, 2bit<option>VCC, 3bit<option>VCC, 4bit<option>VCC, 5bit<option>VCC, 6bit<option>VCC, 7bit<option>VCC, 8bit<option>VCC, 9bit<option>VCC, 10bit<option>VCC, 11bit<option>VCC, 12bit<option>VCC, 13bit<option>VCC, 14bit<option>VCC, 15bit<option selected>VCC, 16bit
+<option>1.1V, 1bit<option>1.1V, 2bit<option>1.1V, 3bit<option>1.1V, 4bit<option>1.1V, 5bit<option>1.1V, 6bit<option>1.1V, 7bit<option>1.1V, 8bit<option>1.1V, 9bit<option>1.1V, 10bit<option>1.1V, 11bit<option>1.1V, 12bit<option>1.1V, 13bit<option>1.1V, 14bit<option>1.1V, 15bit<option>1.1V, 16bit
+</select></td>
+<td>&nbsp;</td>
+<td><select id="f20_rpb">
+<option>VCC, 1bit<option>VCC, 2bit<option>VCC, 3bit<option>VCC, 4bit<option>VCC, 5bit<option>VCC, 6bit<option>VCC, 7bit<option>VCC, 8bit<option>VCC, 9bit<option>VCC, 10bit<option>VCC, 11bit<option>VCC, 12bit<option>VCC, 13bit<option>VCC, 14bit<option>VCC, 15bit<option selected>VCC, 16bit
+<option>1.1V, 1bit<option>1.1V, 2bit<option>1.1V, 3bit<option>1.1V, 4bit<option>1.1V, 5bit<option>1.1V, 6bit<option>1.1V, 7bit<option>1.1V, 8bit<option>1.1V, 9bit<option>1.1V, 10bit<option>1.1V, 11bit<option>1.1V, 12bit<option>1.1V, 13bit<option>1.1V, 14bit<option>1.1V, 15bit<option>1.1V, 16bit
+</select></td>
+<td><select id="f20_rpc">
+<option>VCC, 1bit<option>VCC, 2bit<option>VCC, 3bit<option>VCC, 4bit<option>VCC, 5bit<option>VCC, 6bit<option>VCC, 7bit<option>VCC, 8bit<option>VCC, 9bit<option>VCC, 10bit<option>VCC, 11bit<option>VCC, 12bit<option>VCC, 13bit<option>VCC, 14bit<option>VCC, 15bit<option selected>VCC, 16bit
+<option>1.1V, 1bit<option>1.1V, 2bit<option>1.1V, 3bit<option>1.1V, 4bit<option>1.1V, 5bit<option>1.1V, 6bit<option>1.1V, 7bit<option>1.1V, 8bit<option>1.1V, 9bit<option>1.1V, 10bit<option>1.1V, 11bit<option>1.1V, 12bit<option>1.1V, 13bit<option>1.1V, 14bit<option>1.1V, 15bit<option>1.1V, 16bit
+</select></td>
+<td><select id="f20_rpd">
+<option>VCC, 1bit<option>VCC, 2bit<option>VCC, 3bit<option>VCC, 4bit<option>VCC, 5bit<option>VCC, 6bit<option>VCC, 7bit<option>VCC, 8bit<option>VCC, 9bit<option>VCC, 10bit<option>VCC, 11bit<option>VCC, 12bit<option>VCC, 13bit<option>VCC, 14bit<option>VCC, 15bit<option selected>VCC, 16bit
+<option>1.1V, 1bit<option>1.1V, 2bit<option>1.1V, 3bit<option>1.1V, 4bit<option>1.1V, 5bit<option>1.1V, 6bit<option>1.1V, 7bit<option>1.1V, 8bit<option>1.1V, 9bit<option>1.1V, 10bit<option>1.1V, 11bit<option>1.1V, 12bit<option>1.1V, 13bit<option>1.1V, 14bit<option>1.1V, 15bit<option>1.1V, 16bit
+</select></td>
+</tr>
+</table>
+<input id="f20_sv" type=button value="Save" onclick="f20_sv()">
+<input id="f20_ca" type=checkbox onchange="f20_ca(1)"> clear all alarm flags
+</div>
+<!-- ######## f20 end ######## -->
+
+<!-- ######## f28 begin ######## -->
+<div id="f28" hidden>
+<script language=javascript>
+function f28_rl(once) {
+ xr(dev+"/temperature", function(e, once) {
+  if (xc(this, 0)) {
+   document.getElementById("f28_t").innerHTML = this.response[0];
+   xr(dev+"/scratchpad", function(e, once) {
+    if (xc(this, 0)) {
+     var m = me(8, this.response[0]);
+     document.getElementById("f28_th").value = m[2];
+     document.getElementById("f28_tl").value = m[3];
+     ss("f28_rs", (m[4] >> 5) & 0x03);
+     document.getElementById("raw").innerHTML = "Scratchpad: "+this.response[0];
+     re(once ? 0 : 250);
+    } else e.call(this, once);
+   }, e, once);
+  } else e.call(this, once);
+ }, function(once) {
+  document.getElementById("raw").innerHTML = xe(this);
+  re(once ? 0 : 250);
+ }, once);
+}
+function f28_sv() {
+ document.getElementById("f28_sv").disabled = true;
+ xr(dev+"/temphigh?temphigh="+(+document.getElementById("f28_th").value), function(e) {
+  if (xc(this, 0)) {
+   xr(dev+"/templow?templow="+(+document.getElementById("f28_tl").value), function(e) {
+    if (xc(this, 0)) {
+     xr(dev+"/tempres?tempres="+(9+sg("f28_rs")), function(e) {
+      if (xc(this, 0)) {
+       rl(1);
+       document.getElementById("f28_sv").disabled = false;
+      } else e.call(this);
+     }, e);
+    } else e.call(this);
+   }, e);
+  } else e.call(this);
+ }, function() {
+  document.getElementById("raw").innerHTML = xe(this, "Write failed");
+  document.getElementById("f28_sv").disabled = false;
+ });
+}
+</script>
+Temperature: <span id="f28_t"></span>&#8451;<br>
+Threshold H: <input id="f28_th" type=number size=3 min=0 max=255 step=1><br>
+Threshold L: <input id="f28_tl" type=number size=3 min=0 max=255 step=1><br>
+Resolution: <select id="f28_rs"><option>9<option>10<option>11<option selected>12</select> bits<br>
+<input id="f28_sv" type=button value="Save" onclick="f28_sv()">
+</div>
+<!-- ######## f28 end ######## -->
+
+</div></div></body></html>
